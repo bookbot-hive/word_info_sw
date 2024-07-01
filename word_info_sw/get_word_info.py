@@ -255,6 +255,8 @@ def get_word_info(words: List[str]) -> List[Dict[str, str]]:
         else:
             syllable = get_syllable(word)
 
+        ipa = syllabize_ipa(syllable, ipa)
+
         row = {
             "word": word,
             "syllable": syllable,
@@ -324,6 +326,54 @@ def get_syllable(word: str) -> str:
     #         print("Warning: Invalid syllable found: " + syllable)
 
     return ".".join(syllables)
+
+
+def syllabize_ipa(syllable: str, ipa: str):
+    grapheme = syllable
+    phonemes = ipa.split()
+    num_phonemes = len(phonemes)
+    num_char = len([c for c in grapheme if c != "."])
+    # if phonemes and graphemes don't map 1:1
+    # remap to make 1:1
+    if num_phonemes != num_char:
+        for tone in ["'", "’"]:
+            grapheme = grapheme.replace(tone, "")
+
+        if "ð" in phonemes and "dh" in grapheme:
+            grapheme = grapheme.replace("dh", "ð")
+        if "θ" in phonemes and "th" in grapheme:
+            grapheme = grapheme.replace("th", "θ")
+        if "t͡ʃ" in phonemes and "ch" in grapheme:
+            grapheme = grapheme.replace("ch", "t")
+        if "ɣ" in phonemes and "gh" in grapheme:
+            grapheme = grapheme.replace("gh", "ɣ")
+        if "x" in phonemes and "kh" in grapheme:
+            grapheme = grapheme.replace("kh", "x")
+        if "ʃ" in phonemes and "sh" in grapheme:
+            grapheme = grapheme.replace("sh", "ʃ")
+        if "ⁿɗ͡ʒ" in phonemes and "nj" in grapheme:
+            grapheme = grapheme.replace("nj", "ⁿ")
+        if "ⁿz" in phonemes and "nz" in grapheme:
+            grapheme = grapheme.replace("nz", "ⁿ")
+        if "ᵑg" in phonemes and "ng" in grapheme:
+            grapheme = grapheme.replace("ng", "ᵑ")
+        if "ᶬv" in phonemes and "mv" in grapheme:
+            grapheme = grapheme.replace("mv", "ᶬ")
+        if "ᵐɓ" in phonemes and "mb" in grapheme:
+            grapheme = grapheme.replace("mb", "ᵐ")
+        # NOTE: this is a special case for "m.b" in grapheme
+        if "ᵐɓ" in phonemes and "m.b" in grapheme:
+            grapheme = grapheme.replace("m.b", "ᵐ.")
+        if "ⁿɗ" in phonemes and "nd" in grapheme:
+            grapheme = grapheme.replace("nd", "ⁿ")
+
+    # insert . where . is in syllable
+    dot_indices = [i for i, c in enumerate(grapheme) if c == "."]
+    for i in dot_indices:
+        phonemes.insert(i, ".")
+    phonemes = "".join(phonemes)
+
+    return phonemes
 
 
 if __name__ == "__main__":
