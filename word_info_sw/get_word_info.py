@@ -1,5 +1,6 @@
 from gruut import sentences
 from typing import List, Dict
+import re
 
 VALID_SYLLABLES = set(
     [
@@ -247,7 +248,7 @@ def get_word_info(words: List[str]) -> List[Dict[str, str]]:
     results = []
 
     for word in words:
-        word = word.lower()
+        word = word.lower().replace("’", "'")
         ipa = get_ipa(word)
 
         if word.isnumeric():
@@ -275,7 +276,26 @@ def get_ipa(word: str) -> str:
     Returns:
         str: Whitespace-separated IPAs.
     """
-    ipa = " ".join([p for phns in sentences(word, lang="sw") for phn in phns for p in phn.phonemes])
+    ipa = []
+    for words in sentences(word, lang="sw"):
+        for word in words:
+            phonemes = word.phonemes[:]
+
+            # NOTE: gruut doesn't handle "ng'" /ŋ/
+            # we need to fix e.g. ng'ombe -> /ŋombe/ instead of /ᵑgombe/
+            NG_GRAPHEME = "ng'"
+            NG_PRENASALIZED_PHONEME = "ᵑg"
+            NG_PHONEME = "ŋ"
+            if NG_GRAPHEME in word.text:
+                ng_graphemes = re.findall(f"{NG_GRAPHEME}?", word.text)
+                ng_phonemes_idx = [i for i, p in enumerate(phonemes) if p == NG_PRENASALIZED_PHONEME]
+                assert len(ng_graphemes) == len(ng_phonemes_idx)
+                for i, g in zip(ng_phonemes_idx, ng_graphemes):
+                    phonemes[i] = NG_PHONEME if g == NG_GRAPHEME else phonemes[i]
+
+            ipa += phonemes
+
+    ipa = " ".join(ipa)
     return ipa
 
 
@@ -283,8 +303,15 @@ def get_syllable(word: str) -> str:
     vowels = set("aeiou")
     semi_vowels = set("yw")
     nasals = set("mn")
+    prenasal_consonants = {
+        "m": set("bv"),
+        "n": set("dgjz"),
+    }
     syllables = []
     current_syllable = ""
+
+    # Replace "ng'" with a "ŋ" character
+    word = word.replace("ng'", "ŋ")
 
     for i, char in enumerate(word[::-1]):
         # vowels indicate the start of a new syllable
@@ -301,10 +328,11 @@ def get_syllable(word: str) -> str:
             # only valid if nasal is the first letter in the word
             if (
                 char in nasals
-                and i == len(word) - 1
+                and i == len(word) - 1  # check if first
                 and current_syllable
-                and current_syllable[0] not in vowels
-                and current_syllable[0] not in semi_vowels
+                and current_syllable[0] not in vowels  # not followed a vowel
+                and current_syllable[0] not in semi_vowels  # not followed a semi-vowel
+                and current_syllable[0] not in prenasal_consonants[char]  # not followed by a prenasal consonant
             ):
                 syllables.insert(0, current_syllable)
                 current_syllable = char
@@ -320,10 +348,8 @@ def get_syllable(word: str) -> str:
         if i == len(word) - 1 and current_syllable:
             syllables.insert(0, current_syllable)
 
-    # TODO: check if all syllables are valid
-    # for syllable in syllables:
-    #     if syllable not in VALID_SYLLABLES:
-    #         print("Warning: Invalid syllable found: " + syllable)
+    # Replace "ŋ" back with "ng'"
+    syllables = [syl.replace("ŋ", "ng'") for syl in syllables]
 
     return ".".join(syllables)
 
@@ -336,9 +362,6 @@ def syllabize_ipa(syllable: str, ipa: str):
     # if phonemes and graphemes don't map 1:1
     # remap to make 1:1
     if num_phonemes != num_char:
-        for tone in ["'", "’"]:
-            grapheme = grapheme.replace(tone, "")
-
         if "ð" in phonemes and "dh" in grapheme:
             grapheme = grapheme.replace("dh", "ð")
         if "θ" in phonemes and "th" in grapheme:
@@ -355,15 +378,14 @@ def syllabize_ipa(syllable: str, ipa: str):
             grapheme = grapheme.replace("nj", "ⁿ")
         if "ⁿz" in phonemes and "nz" in grapheme:
             grapheme = grapheme.replace("nz", "ⁿ")
+        if "ŋ" in phonemes and "ng'" in grapheme:
+            grapheme = grapheme.replace("ng'", "ŋ")
         if "ᵑg" in phonemes and "ng" in grapheme:
             grapheme = grapheme.replace("ng", "ᵑ")
         if "ᶬv" in phonemes and "mv" in grapheme:
             grapheme = grapheme.replace("mv", "ᶬ")
         if "ᵐɓ" in phonemes and "mb" in grapheme:
             grapheme = grapheme.replace("mb", "ᵐ")
-        # NOTE: this is a special case for "m.b" in grapheme
-        if "ᵐɓ" in phonemes and "m.b" in grapheme:
-            grapheme = grapheme.replace("m.b", "ᵐ.")
         if "ⁿɗ" in phonemes and "nd" in grapheme:
             grapheme = grapheme.replace("nd", "ⁿ")
 
