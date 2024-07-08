@@ -13,7 +13,6 @@ This library grabs multiple information of a Swahili word. Given a word, the lib
 
 ```sh
 git clone https://github.com/bookbot-hive/word_info_sw.git
-pip install -r word_info_sw/requirements.txt
 pip install word_info_sw/
 ```
 
