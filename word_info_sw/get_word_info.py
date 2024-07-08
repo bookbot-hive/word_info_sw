@@ -1,6 +1,10 @@
 from gruut import sentences
 from typing import List, Dict
+import openai
 import re
+import os
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 VALID_SYLLABLES = set(
     [
@@ -226,7 +230,7 @@ VALID_SYLLABLES = set(
 )
 
 
-def get_word_info(words: List[str]) -> List[Dict[str, str]]:
+def get_word_info(words: List[str], include_description: bool = False) -> List[Dict[str, str]]:
     """
     Gets multiple information of a word.
 
@@ -236,6 +240,7 @@ def get_word_info(words: List[str]) -> List[Dict[str, str]]:
     | `word`        | Word                      |
     | `syllable`    | Word with syllable breaks |
     | `ipa`         | IPA of word               |
+    | `description` | Description of word       |
 
     Args:
         words (List[str]):
@@ -250,6 +255,7 @@ def get_word_info(words: List[str]) -> List[Dict[str, str]]:
     for word in words:
         word = word.lower().replace("’", "'")
         ipa = get_ipa(word)
+        desc = get_word_desc(word) if include_description else ""
 
         if word.isnumeric():
             syllable = word
@@ -262,6 +268,7 @@ def get_word_info(words: List[str]) -> List[Dict[str, str]]:
             "word": word,
             "syllable": syllable,
             "ipa": ipa,
+            "description": desc,
         }
         results.append(row)
     return results
@@ -398,8 +405,33 @@ def syllabize_ipa(syllable: str, ipa: str):
     return phonemes
 
 
+def get_word_desc(word: str) -> str:
+    """
+    Generates a simple description of a word using GPT-4 in Kiswahili
+
+    Args:
+        word (str):
+            Input word to be described.
+
+    Returns:
+        str:
+            Description of the input word.
+    """
+    result = openai.ChatCompletion.create(
+        model="gpt-4o-2024-05-13",
+        messages=[
+            {
+                "role": "user",
+                "content": f'Define, in Kiswahili, "{word}" within 12 to 20 words for a 5 year old. If and only if the word has synonyms, mention them.',
+            }
+        ],
+    )
+
+    return result.choices[0].message.content
+
+
 if __name__ == "__main__":
-    print(get_word_info(["saa"]))
+    print(get_word_info(["saa"], include_description=True))
     print(get_word_info(["shule", "kiatu", "anapenda", "mtoto", "kisu", "mbwa", "tumbo", "mayai", "nyuma"]))
     print(
         get_word_info(
