@@ -310,6 +310,7 @@ def get_syllable(word: str) -> str:
     vowels = set("aeiou")
     semi_vowels = set("yw")
     nasals = set("mn")
+    fricatives = set("sz")
     prenasal_consonants = {
         "m": set("bv"),
         "n": set("dgjz"),
@@ -324,8 +325,13 @@ def get_syllable(word: str) -> str:
         # vowels indicate the start of a new syllable
         if char in vowels:
             # restart the current syllable if it's a vowel,
-            # unless current syllable is a nasal, or is the same repeated vowel
-            if current_syllable and current_syllable not in nasals and current_syllable != char:
+            # unless current syllable is a nasal/fricative, or is the same repeated vowel
+            if (
+                current_syllable
+                and current_syllable not in nasals
+                and current_syllable not in fricatives
+                and current_syllable != char
+            ):
                 syllables.insert(0, current_syllable)
                 current_syllable = ""
             # start a new syllable with the vowel
