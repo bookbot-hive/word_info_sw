@@ -259,7 +259,9 @@ def get_word_info(words: List[str], include_description: bool = False) -> List[D
         desc = get_word_desc(word) if include_description else ""
 
         if word.isnumeric():
-            syllable = get_syllable(num2words(int(word), lang="sw").replace(" ", ""))
+            is_year = 1000 < float(word) < 3000
+            num2words_to = "year" if is_year else "ordinal"
+            syllable = get_syllable(num2words(int(word), lang="sw", to=num2words_to).replace(" ", ""))
         else:
             syllable = get_syllable(word)
 
@@ -438,31 +440,32 @@ def get_word_desc(word: str) -> str:
 
 
 if __name__ == "__main__":
-    print(get_word_info(["saa"], include_description=True))
+    # print(get_word_info(["saa"], include_description=True))
     print(get_word_info(["45"]))
-    print(get_word_info(["shule", "kiatu", "anapenda", "mtoto", "kisu", "mbwa", "tumbo", "mayai", "nyuma"]))
-    print(
-        get_word_info(
-            [
-                "Usomaji",
-                "umekuwa",
-                "mafanikio",
-                "kwa",
-                "jumla",
-                "mahitaji",
-                "ya",
-                "mambo",
-                "ya",
-                "kusoma",
-                "yametokea",
-                "na",
-                "maduka",
-                "ya",
-                "vitabu",
-                "yaliyojaa",
-                "vitabu",
-                "yameonekana",
-                "kukidhi",
-            ]
-        )
-    )
+    print(get_word_info(["1863"]))
+    # print(get_word_info(["shule", "kiatu", "anapenda", "mtoto", "kisu", "mbwa", "tumbo", "mayai", "nyuma"]))
+    # print(
+    #     get_word_info(
+    #         [
+    #             "Usomaji",
+    #             "umekuwa",
+    #             "mafanikio",
+    #             "kwa",
+    #             "jumla",
+    #             "mahitaji",
+    #             "ya",
+    #             "mambo",
+    #             "ya",
+    #             "kusoma",
+    #             "yametokea",
+    #             "na",
+    #             "maduka",
+    #             "ya",
+    #             "vitabu",
+    #             "yaliyojaa",
+    #             "vitabu",
+    #             "yameonekana",
+    #             "kukidhi",
+    #         ]
+    #     )
+    # )
