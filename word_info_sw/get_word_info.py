@@ -1,5 +1,6 @@
 from gruut import sentences
 from typing import List, Dict
+from num2words import num2words
 import openai
 import re
 import os
@@ -258,7 +259,7 @@ def get_word_info(words: List[str], include_description: bool = False) -> List[D
         desc = get_word_desc(word) if include_description else ""
 
         if word.isnumeric():
-            syllable = word
+            syllable = get_syllable(num2words(int(word), lang="sw").replace(" ", ""))
         else:
             syllable = get_syllable(word)
 
@@ -438,6 +439,7 @@ def get_word_desc(word: str) -> str:
 
 if __name__ == "__main__":
     print(get_word_info(["saa"], include_description=True))
+    print(get_word_info(["45"]))
     print(get_word_info(["shule", "kiatu", "anapenda", "mtoto", "kisu", "mbwa", "tumbo", "mayai", "nyuma"]))
     print(
         get_word_info(
